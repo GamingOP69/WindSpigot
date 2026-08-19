@@ -40,18 +40,23 @@ public final class IndexedLinkedHashSet<E> implements Set<E> {
 		list.clear();
 	}
 
-	// WindSpigot start - GamingOP69 - safe bounds check on get
 	public E get(int index) {
-		if (index >= 0 && index < list.size()) {
-			try {
-				return list.get(index);
-			} catch (IndexOutOfBoundsException e) {
-				return null;
-			}
+		// Guard against negative indices and TOCTOU races where the list may shrink
+		// between the caller computing the index and the actual get() call. Rather than
+		// propagating an ArrayIndexOutOfBoundsException up to callers (which are
+		// typically ticking loops that tolerate a missing entry), return null so they
+		// can skip the entry cleanly.
+		if (index < 0 || index >= list.size()) {
+			return null;
 		}
-		return null;
+		try {
+			return list.get(index);
+		} catch (IndexOutOfBoundsException e) {
+			// Concurrent removal shrank the list between the bounds check and the get;
+			// return null to let callers handle the absent entry gracefully.
+			return null;
+		}
 	}
-	// WindSpigot end - GamingOP69
 
 	@Override
 	public boolean removeAll(Collection<?> c) {
