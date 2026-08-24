@@ -186,7 +186,7 @@
 	<!-- This builds a completely 'ready to start' jar with all dependencies 
 		inside -->
 	<build>
-		<finalName>WindSpigot-Server</finalName>
+		<finalName>WindSpigot</finalName>
 		<defaultGoal>install</defaultGoal>
 		<plugins>
 			<plugin>
@@ -194,7 +194,6 @@
 				<artifactId>maven-jar-plugin</artifactId>
 				<version>3.2.2</version>
 				<configuration>
-					<finalName>WindSpigot</finalName>
 					<forceCreation>true</forceCreation> <!-- Required to prevent shading the jar multiple times -->
 					<archive>
 						<manifestEntries>
@@ -243,8 +242,15 @@
 							<goal>shade</goal>
 						</goals>
 						<configuration>
-							<!-- Paper start - Update Log4j -->
 							<filters>
+								<filter>
+									<artifact>*:*</artifact>
+									<excludes>
+										<exclude>module-info.class</exclude>
+										<exclude>META-INF/versions/*/module-info.class</exclude>
+									</excludes>
+								</filter>
+								<!-- Paper start - Update Log4j -->
 								<filter>
 									<artifact>org.spigotmc:minecraft-server:**</artifact>
 									<excludes>

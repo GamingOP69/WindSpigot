@@ -131,6 +131,15 @@
                     <createDependencyReducedPom>false</createDependencyReducedPom>
 					<!-- when downloading via Maven we can pull depends individually -->
                     <shadedArtifactAttached>true</shadedArtifactAttached>
+                    <filters>
+                        <filter>
+                            <artifact>*:*</artifact>
+                            <excludes>
+                                <exclude>module-info.class</exclude>
+                                <exclude>META-INF/versions/*/module-info.class</exclude>
+                            </excludes>
+                        </filter>
+                    </filters>
                 </configuration>
             </plugin>
             <plugin>
