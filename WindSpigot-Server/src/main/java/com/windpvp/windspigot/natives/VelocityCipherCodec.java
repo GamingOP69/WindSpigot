@@ -1,4 +1,4 @@
-﻿package com.windpvp.windspigot.natives;
+package com.windpvp.windspigot.natives;
 
 import com.velocitypowered.natives.encryption.VelocityCipher;
 import com.velocitypowered.natives.util.MoreByteBufUtils;

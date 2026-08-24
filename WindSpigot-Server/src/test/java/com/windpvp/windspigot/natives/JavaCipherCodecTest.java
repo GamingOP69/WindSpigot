@@ -1,4 +1,4 @@
-﻿package com.windpvp.windspigot.natives;
+package com.windpvp.windspigot.natives;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;

@@ -1,4 +1,4 @@
-﻿package com.windpvp.windspigot.natives;
+package com.windpvp.windspigot.natives;
 
 import org.apache.logging.log4j.Logger;
 
