@@ -11,8 +11,10 @@ local.properties
 .classpath
 .settings/
 .loadpath
-/target
-/dependency-reduced-pom.xml
+target/
+**/target/
+dependency-reduced-pom.xml
+**/dependency-reduced-pom.xml
 
 # Intellij
 *.iml
