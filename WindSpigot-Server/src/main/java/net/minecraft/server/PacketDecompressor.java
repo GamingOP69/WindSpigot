@@ -1,10 +1,9 @@
-package net.minecraft.server;
+﻿package net.minecraft.server;
 
 import java.util.List;
 import java.util.zip.Inflater;
 
-import com.velocitypowered.natives.compression.VelocityCompressor; // Paper
-import com.velocitypowered.natives.util.MoreByteBufUtils; // Paper
+import com.windpvp.windspigot.natives.WindCompressionCodec; // WindSpigot
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -14,18 +13,20 @@ import io.netty.handler.codec.DecoderException;
 
 public class PacketDecompressor extends ByteToMessageDecoder {
 	private final Inflater inflater;
-	private final com.velocitypowered.natives.compression.VelocityCompressor compressor; // Paper
+	// WindSpigot start - WindCompressionCodec abstracts velocity-native (Java 11+) or null (Java 8 Inflater fallback)
+	private final WindCompressionCodec codec;
 	private int threshold;
 
 	public PacketDecompressor(int compressionThreshold) {
 		this(null, compressionThreshold);
 	}
 
-	public PacketDecompressor(VelocityCompressor compressor, int compressionThreshold) {
+	public PacketDecompressor(WindCompressionCodec codec, int compressionThreshold) {
 		this.threshold = compressionThreshold;
-		this.inflater = compressor == null ? new Inflater() : null;
-		this.compressor = compressor;
+		this.inflater = codec == null ? new Inflater() : null;
+		this.codec = codec;
 	}
+	// WindSpigot end
 
 	@Override
 	protected void decode(ChannelHandlerContext var1, ByteBuf var2, List<Object> var3) throws Exception {
@@ -55,12 +56,12 @@ public class PacketDecompressor extends ByteToMessageDecoder {
 					this.inflater.reset();
 					return;
 				}
+				// WindSpigot start - velocity-native / codec path
 				int claimedUncompressedSize = var5; // OBFHELPER
-				ByteBuf compatibleIn = MoreByteBufUtils.ensureCompatible(var1.alloc(), this.compressor, var2);
-				ByteBuf uncompressed = MoreByteBufUtils.preferredBuffer(var1.alloc(), this.compressor,
-						claimedUncompressedSize);
+				ByteBuf compatibleIn = this.codec.ensureCompatible(var1.alloc(), var2);
+				ByteBuf uncompressed = this.codec.preferredBuffer(var1.alloc(), claimedUncompressedSize);
 				try {
-					this.compressor.inflate(compatibleIn, uncompressed, claimedUncompressedSize);
+					this.codec.inflate(compatibleIn, uncompressed, claimedUncompressedSize);
 					var3.add(uncompressed);
 					var2.clear();
 				} catch (Exception e) {
@@ -69,6 +70,7 @@ public class PacketDecompressor extends ByteToMessageDecoder {
 				} finally {
 					compatibleIn.release();
 				}
+				// WindSpigot end
 				// Paper end
 			}
 		}
@@ -77,8 +79,8 @@ public class PacketDecompressor extends ByteToMessageDecoder {
 	// Paper start
 	@Override
 	public void handlerRemoved0(ChannelHandlerContext ctx) throws Exception {
-		if (this.compressor != null) {
-			this.compressor.close();
+		if (this.codec != null) {
+			this.codec.close();
 		}
 	}
 	// Paper end

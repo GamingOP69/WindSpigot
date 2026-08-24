@@ -11,7 +11,7 @@ import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import com.velocitypowered.natives.util.Natives; // Paper
+import com.windpvp.windspigot.natives.NativeAcceleration; // WindSpigot - runtime Java 8/11+ detection
 import com.windpvp.windspigot.protocol.MinecraftPipeline;
 
 import io.netty.bootstrap.ServerBootstrap;
@@ -143,10 +143,9 @@ public class ServerConnection {
 				}
 			}
 
-			// Paper start - indicate Velocity natives in use
-			LOGGER.info("WindSpigot: Using " + Natives.compress.getLoadedVariant() + " compression from Velocity.");
-			LOGGER.info("WindSpigot: Using " + Natives.cipher.getLoadedVariant() + " cipher from Velocity.");
-			// Paper end
+			// WindSpigot start - runtime detection: logs native or Java fallback status
+			NativeAcceleration.logStatus(LOGGER);
+			// WindSpigot end
 
 			this.getListeningChannels()
 					.add(((new ServerBootstrap().channel(channel))

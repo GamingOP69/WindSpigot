@@ -16,9 +16,10 @@ import org.bukkit.craftbukkit.entity.CraftPlayer;
 
 import com.google.common.collect.Queues;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import com.velocitypowered.natives.compression.VelocityCompressor; // Paper
-import com.velocitypowered.natives.util.Natives; // Paper
 import com.windpvp.windspigot.WindSpigot;
+import com.windpvp.windspigot.natives.NativeAcceleration; // WindSpigot - runtime Java 8/11+ detection
+import com.windpvp.windspigot.natives.WindCipherCodec;   // WindSpigot
+import com.windpvp.windspigot.natives.WindCompressionCodec; // WindSpigot
 import com.windpvp.windspigot.config.WindSpigotConfig;
 import com.windpvp.windspigot.exception.ExploitException;
 
@@ -447,11 +448,10 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet> {
 	public void setupEncryption(javax.crypto.SecretKey key) throws CryptException {
 		if (!this.o) {
 			try {
-				com.velocitypowered.natives.encryption.VelocityCipher decryption = com.velocitypowered.natives.util.Natives.cipher
-						.get().forDecryption(key);
-				com.velocitypowered.natives.encryption.VelocityCipher encryption = com.velocitypowered.natives.util.Natives.cipher
-						.get().forEncryption(key);
-
+				// WindSpigot start - VelocityCipherCodec on Java 11+, JavaCipherCodec (AES/CFB8) on Java 8
+				WindCipherCodec decryption = NativeAcceleration.createCipher(key, false);
+				WindCipherCodec encryption = NativeAcceleration.createCipher(key, true);
+				// WindSpigot end
 				this.o = true;
 				this.channel.pipeline().addBefore("splitter", "decrypt", new PacketDecrypter(decryption));
 				this.channel.pipeline().addBefore("prepender", "encrypt", new PacketEncrypter(encryption));
@@ -494,19 +494,21 @@ public class NetworkManager extends SimpleChannelInboundHandler<Packet> {
 	public void setupCompression(int compressionThreshold) {
 		// Nacho end
 		if (compressionThreshold >= 0) {
-			VelocityCompressor compressor = Natives.compress.get().create(-1); // Paper
+			// WindSpigot start - null on Java 8 (Deflater/Inflater fallback), VelocityCompressionCodec on Java 11+
+			WindCompressionCodec codec = NativeAcceleration.tryCreateCompressor();
+			// WindSpigot end
 			if (this.channel.pipeline().get("decompress") instanceof PacketDecompressor) {
 				((PacketDecompressor) this.channel.pipeline().get("decompress")).a(compressionThreshold);
 			} else {
 				this.channel.pipeline().addBefore("decoder", "decompress",
-						new PacketDecompressor(compressor, compressionThreshold)); // Paper
+						new PacketDecompressor(codec, compressionThreshold)); // Paper
 			}
 
 			if (this.channel.pipeline().get("compress") instanceof PacketCompressor) {
 				((PacketCompressor) this.channel.pipeline().get("compress")).a(compressionThreshold); // WindSpigot - fix pipeline key from decompress to compress
 			} else {
 				this.channel.pipeline().addBefore("encoder", "compress",
-						new PacketCompressor(compressor, compressionThreshold)); // Paper
+						new PacketCompressor(codec, compressionThreshold)); // Paper
 			}
 		} else {
 			if (this.channel.pipeline().get("decompress") instanceof PacketDecompressor) {

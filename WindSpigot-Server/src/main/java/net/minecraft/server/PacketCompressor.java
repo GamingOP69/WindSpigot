@@ -1,9 +1,8 @@
-package net.minecraft.server;
+﻿package net.minecraft.server;
 
 import java.util.zip.Deflater;
 
-import com.velocitypowered.natives.compression.VelocityCompressor; // Paper
-import com.velocitypowered.natives.util.MoreByteBufUtils; // Paper
+import com.windpvp.windspigot.natives.WindCompressionCodec; // WindSpigot
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
@@ -12,26 +11,27 @@ import io.netty.handler.codec.MessageToByteEncoder;
 public class PacketCompressor extends MessageToByteEncoder<ByteBuf> {
 	private final byte[] encodeBuf; // Paper
 	private final Deflater deflater;
-	private final com.velocitypowered.natives.compression.VelocityCompressor compressor; // Paper
-	private int threshold;
+	// WindSpigot start - WindCompressionCodec abstracts velocity-native (Java 11+) or null (Java 8 Deflater fallback)
+	private final WindCompressionCodec codec;
 
 	public PacketCompressor(int compressionThreshold) {
-		// Paper start
 		this(null, compressionThreshold);
 	}
 
-	public PacketCompressor(VelocityCompressor compressor, int compressionThreshold) {
+	public PacketCompressor(WindCompressionCodec codec, int compressionThreshold) {
 		this.threshold = compressionThreshold;
-		if (compressor == null) {
+		if (codec == null) {
 			this.encodeBuf = new byte[8192];
 			this.deflater = new Deflater();
 		} else {
 			this.encodeBuf = null;
 			this.deflater = null;
 		}
-		this.compressor = compressor;
-		// Paper end
+		this.codec = codec;
 	}
+	// WindSpigot end
+
+	private int threshold;
 
 	@Override
 	protected void encode(ChannelHandlerContext var1, ByteBuf var2, ByteBuf var3) throws Exception {
@@ -58,13 +58,15 @@ public class PacketCompressor extends MessageToByteEncoder<ByteBuf> {
 				return;
 			}
 
+			// WindSpigot start - velocity-native / codec path
 			var5.writeVarInt(var4);
-			ByteBuf compatibleIn = MoreByteBufUtils.ensureCompatible(var1.alloc(), this.compressor, var2);
+			ByteBuf compatibleIn = this.codec.ensureCompatible(var1.alloc(), var2);
 			try {
-				this.compressor.deflate(compatibleIn, var3);
+				this.codec.deflate(compatibleIn, var3);
 			} finally {
 				compatibleIn.release();
 			}
+			// WindSpigot end
 			// Paper end
 		}
 	}
@@ -72,21 +74,17 @@ public class PacketCompressor extends MessageToByteEncoder<ByteBuf> {
 	// Paper start
 	@Override
 	protected ByteBuf allocateBuffer(ChannelHandlerContext ctx, ByteBuf msg, boolean preferDirect) throws Exception {
-		if (this.compressor != null) {
+		if (this.codec != null) {
 			// We allocate bytes to be compressed plus 1 byte. This covers two cases:
 			//
 			// - Compression
-			// According to
-			// https://github.com/ebiggers/libdeflate/blob/master/libdeflate.h#L103,
+			// According to https://github.com/ebiggers/libdeflate/blob/master/libdeflate.h#L103,
 			// if the data compresses well (and we do not have some pathological case) then
-			// the maximum
-			// size the compressed size will ever be is the input size minus one.
+			// the maximum size the compressed size will ever be is the input size minus one.
 			// - Uncompressed
-			// This is fairly obvious - we will then have one more than the uncompressed
-			// size.
+			// This is fairly obvious - we will then have one more than the uncompressed size.
 			int initialBufferSize = msg.readableBytes() + 1;
-			return com.velocitypowered.natives.util.MoreByteBufUtils.preferredBuffer(ctx.alloc(), this.compressor,
-					initialBufferSize);
+			return this.codec.preferredBuffer(ctx.alloc(), initialBufferSize);
 		}
 
 		return super.allocateBuffer(ctx, msg, preferDirect);
@@ -94,8 +92,8 @@ public class PacketCompressor extends MessageToByteEncoder<ByteBuf> {
 
 	@Override
 	public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
-		if (this.compressor != null) {
-			this.compressor.close();
+		if (this.codec != null) {
+			this.codec.close();
 		}
 	}
 	// Paper end

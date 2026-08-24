@@ -1,26 +1,26 @@
-package net.minecraft.server;
+﻿package net.minecraft.server;
 
 import java.util.List;
 
-import com.velocitypowered.natives.encryption.VelocityCipher;
-import com.velocitypowered.natives.util.MoreByteBufUtils;
+import com.windpvp.windspigot.natives.WindCipherCodec; // WindSpigot
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageDecoder;
 
 public class PacketDecrypter extends MessageToMessageDecoder<ByteBuf> {
-	private final VelocityCipher cipher; // Paper
+	// WindSpigot start - WindCipherCodec abstracts velocity-native cipher (Java 11+) or JCE AES/CFB8 (Java 8)
+	private final WindCipherCodec cipher;
 
-	public PacketDecrypter(VelocityCipher cipher) { // Paper
-		this.cipher = cipher; // Paper
+	public PacketDecrypter(WindCipherCodec cipher) {
+		this.cipher = cipher;
 	}
 
 	@Override
 	protected void decode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, List<Object> list)
 			throws Exception {
 		// Paper start
-		ByteBuf compatible = MoreByteBufUtils.ensureCompatible(channelHandlerContext.alloc(), cipher, byteBuf);
+		ByteBuf compatible = cipher.ensureCompatible(channelHandlerContext.alloc(), byteBuf);
 		try {
 			cipher.process(compatible);
 			list.add(compatible);
@@ -37,4 +37,5 @@ public class PacketDecrypter extends MessageToMessageDecoder<ByteBuf> {
 		cipher.close();
 	}
 	// Paper end
+	// WindSpigot end
 }
