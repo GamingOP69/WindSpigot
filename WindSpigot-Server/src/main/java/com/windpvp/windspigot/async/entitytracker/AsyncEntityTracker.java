@@ -8,7 +8,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import me.rastrian.dev.utils.IndexedLinkedHashSet;
-import net.minecraft.server.*;
+import net.minecraft.server.EntityPlayer;
+import net.minecraft.server.EntityTracker;
+import net.minecraft.server.EntityTrackerEntry;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.WorldServer;
 
 public class AsyncEntityTracker extends EntityTracker {
 	
@@ -27,7 +31,7 @@ public class AsyncEntityTracker extends EntityTracker {
 		for (int i = 1; i <= WindSpigotConfig.trackingThreads; i++) {
 			final int finalOffset = offset++;
 			
-			// WindSpigot start - GamingOP69 - wrap tracker update in try-finally for latch safety
+			// WindSpigot start - wrap tracker update in try-finally for latch safety
 			AsyncUtil.run(() -> {
 				try {
 					int size = c.size();
@@ -46,7 +50,7 @@ public class AsyncEntityTracker extends EntityTracker {
 				}
 
 			}, trackingThreadExecutor);
-			// WindSpigot end - GamingOP69
+			// WindSpigot end 
 			
 		}
 		try {
@@ -55,9 +59,9 @@ public class AsyncEntityTracker extends EntityTracker {
             e.printStackTrace();
         }
 	    worldServer.ticker.getLatch().reset();
-		for (EntityPlayer player : MinecraftServer.getServer().getPlayerList().players) {
-			player.playerConnection.sendQueuedPackets();
-		}
+        for (EntityPlayer player : MinecraftServer.getServer().getPlayerList().players) {
+            player.playerConnection.sendQueuedPackets();
+        }
 	}
 
 	public static ExecutorService getExecutor() {
