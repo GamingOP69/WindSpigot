@@ -145,12 +145,12 @@ public abstract class World implements IBlockAccess {
 	private int tileTickPosition;
 	public final PlayerMap playerMap = new PlayerMap();
 
-	// WindSpigot start - GamingOP69 - thread-safe synchronized Int2FloatMap for async explosion density calculation
+	// WindSpigot start - thread-safe synchronized Int2FloatMap for async explosion density calculation
 	public final it.unimi.dsi.fastutil.ints.Int2FloatMap explosionDensityCache = it.unimi.dsi.fastutil.ints.Int2FloatMaps.synchronize(new it.unimi.dsi.fastutil.ints.Int2FloatOpenHashMap());
 	{
 		explosionDensityCache.defaultReturnValue(-1.0f);
 	}
-	// WindSpigot end - GamingOP69
+	// WindSpigot end
 
 	public ExecutorService lightingExecutor = Executors
 			.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat("PaperSpigot - Lighting Thread").build()); // PaperSpigot
@@ -209,7 +209,8 @@ public abstract class World implements IBlockAccess {
 		this.ticksPerMonsterSpawns = this.getServer().getTicksPerMonsterSpawns(); // CraftBukkit
 		// CraftBukkit end
 		// Spigot start
-		this.chunkTickRadius = (byte) ((spigotConfig.viewDistance < 7) ? spigotConfig.viewDistance : 7); // FalchusSpigot - Fix Spigot per-world view distance
+		this.chunkTickRadius = (byte) ((this.getServer().getViewDistance() < 7) ? this.getServer().getViewDistance()
+				: 7);
 		this.chunkTickList = new it.unimi.dsi.fastutil.longs.Long2ShortOpenHashMap(spigotConfig.chunksPerTick * 5, 0.7f); // SportPaper: trove -> fastutil
 		// Spigot end
 
