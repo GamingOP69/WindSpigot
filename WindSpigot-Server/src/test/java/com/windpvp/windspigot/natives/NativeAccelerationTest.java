@@ -10,6 +10,10 @@ import java.nio.charset.StandardCharsets;
 
 public class NativeAccelerationTest {
 
+    static {
+        System.setProperty("log4j2.disable.jmx", "true");
+    }
+
     private static final Logger LOGGER = LogManager.getLogger(NativeAccelerationTest.class);
     private static final byte[] TEST_KEY = "1234567890123456".getBytes(StandardCharsets.UTF_8);
 
